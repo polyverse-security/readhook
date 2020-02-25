@@ -16,10 +16,10 @@ docker build --no-cache -t readhook .
 docker run --name readhook readhook
 
 # Extract the build artifacts
-docker cp readhook:/readhook/app/ $PWD/app/
-docker cp readhook:/readhook/dll/ $PWD/dll/
-docker cp readhook:/readhook/lib/ $PWD/lib/
-docker cp readhook:/readhook/obj/ $PWD/obj/
+docker cp readhook:/readhook/app .
+docker cp readhook:/readhook/dll .
+docker cp readhook:/readhook/lib .
+docker cp readhook:/readhook/obj .
 
 # Remove the build container
 docker rm -f readhook

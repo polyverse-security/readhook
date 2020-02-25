@@ -1,9 +1,5 @@
 #!/bin/bash
 
-hostport="$1"
-
-if [[ "$hostport" == "" ]]; then
-	hostport="docker.for.mac.localhost:5555"
-fi
+hostport="${1:-docker.for.mac.localhost:5555}"
 
 docker run -it --rm --name readhook -p 5555:5555 readhook /readhook/app/fullhook "$hostport"

@@ -66,7 +66,6 @@ l_popRDX:	 // Fallback gadget for "POP RDX"
 	return makeShellcode(&plp->pl_scu.sc, p, np);
 } // makeload()
 
-
 static char *p8(void *s0) {
 	static char d[sizeof(Pointer)];
 	char *s = (char *) s0;

@@ -16,6 +16,7 @@ typedef struct Payload {
 	ptrdiff_t	pl_stackSize;
 	AddressUnion	pl_popRDX;
 	long		pl_permission;
+	AddressUnion	pl_nop;
 	AddressUnion	pl_mprotect;
 
 	// Stack pivot to executable code (&pl_scu)

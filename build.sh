@@ -10,7 +10,7 @@ mkdir -p app dll lib obj
 docker rm -f readhook
 
 # Build readhook
-docker build --no-cache -t readhook .
+docker build -t readhook .
 
 # Run readhook and just sleep while we copy the build artifacts
 docker run --name readhook readhook

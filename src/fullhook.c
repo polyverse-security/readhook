@@ -10,7 +10,6 @@
 #include "strnstr.h"
 
 static const char s_basemagic[]	= "xyzzy";
-static const char s_fullmagic[]	= "xyzzx";
 static const char s_makeload[]	= "MAKELOAD";
 static const char s_dumpload[]	= "DUMPLOAD";
 static const char s_overload[]	= "OVERLOAD";
@@ -24,13 +23,9 @@ static ssize_t falseEcho(PayloadPtr plp, char *p, ssize_t np, ssize_t nc) {
 
         // Make room for the payload (where the request used to be).
         char *src = p + nc;
-        char *dst = p + nPayload64 - strlen(s_fullmagic) + strlen(s_basemagic) - strlen(s_makeload) + strlen(s_overflow);
+        char *dst = p + nPayload64 - strlen(s_makeload) + strlen(s_overflow);
         ssize_t delta = dst - src;
         memmove(dst, src, np - nc);
-
-        // Replace s_fullmagic with s_basemagic
-        memcpy(p - strlen(s_makeload) - strlen(s_fullmagic), s_basemagic, strlen(s_basemagic));
-        p += strlen(s_basemagic) - strlen(s_fullmagic);
 
         // Replace s_makeload with s_overflow
         memcpy(p - strlen(s_makeload), s_overflow, strlen(s_overflow));
@@ -53,15 +48,6 @@ static void overload(Pointer p, size_t n, BaseAddressesPtr baseAddressesPtr) {
 	memcpy(buffer, p, n);
 } // overload()
 
-// This is the overflow that readhook is all about.
-static void overflow(Pointer p, size_t n, BaseAddressesPtr baseAddressesPtr) {
-        char buffer[8] = {' ', ' ', 'E', 'G', 'G', ' ', ' ', 0 };
-
-	baseAddressesPtr->buf_base = &buffer;
-	dofixups(p, n, baseAddressesPtr);
-	memcpy(buffer, p, n);
-} // overflow()
-
 // Interloper read function that watches for the magic string.
 typedef
 ssize_t Read(int fd, void *buf, size_t count);
@@ -69,10 +55,10 @@ ssize_t read(int fd, void *buf, size_t count) {
 	Read *libc_read = (Read *) dlsym(RTLD_NEXT, "read");
 	ssize_t result = libc_read(fd, buf, count);
 
-	char *p = (result < (ssize_t) strlen(s_fullmagic)) ? NULL : strnstr(buf, s_fullmagic, result);
+	char *p = (result < (ssize_t) strlen(s_basemagic)) ? NULL : strnstr(buf, s_basemagic, result);
 
 	if (p) {
-		p += strlen(s_fullmagic);
+		p += strlen(s_basemagic);
 
 		BaseAddresses baseAddresses;
 		Payload payload;
@@ -94,11 +80,6 @@ ssize_t read(int fd, void *buf, size_t count) {
 			dumpload(&payload, &baseAddresses);
 		else if (!strncmp(s_overload, p, strlen(s_overload)))
 			overload(&payload, sizeof(payload), &baseAddresses);
-		else if (!strncmp(s_overflow, p, strlen(s_overflow))) {
-			unsigned char *s64 = (unsigned char *) (p + strlen(s_overflow));
-			size_t n256 = b64Decode(s64, b64Length(s64), (unsigned char *) p, 65535);
-			overflow(p, n256, &baseAddresses);
-		} // else if
 	} // if
 
 	return result;

@@ -66,7 +66,7 @@ AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr baseAddressesPt
 	return au;
 } // fixupAddressUnion()
 
-// This function MUST return a malloc()'ed block of memory to avoid stack corruption
+// This function MUST return a malloc()'ed block of memory to avoid stack corruption (it's ok, the program's getting pwned).
 Pointer dofixups(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr) {
 	size_t nAUP = n - sizeof(AddressUnionPtr) + 1;
 	AddressUnionPtr srcAUP = (AddressUnionPtr) src;

@@ -19,7 +19,7 @@ typedef union AddressUnion {
 typedef struct BaseAddresses {
 	Pointer buf_base;
 	Pointer libc_base;
-	Pointer pie_base;
+	Pointer fbg_base;
 	Pointer stack_base;
 } BaseAddresses, *BaseAddressesPtr;
 
@@ -28,5 +28,6 @@ extern Pointer      baseAddress(char base, BaseAddressesPtr baseAddressesPtr);
 extern Offset       pointerToOffset(Pointer p, char base, BaseAddressesPtr baseAddressesPtr);
 extern Offset       indirectToOffset(Pointer p, char base, BaseAddressesPtr baseAddressesPtr);
 extern AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr baseAddressesPtr);
-extern void         dofixups(Pointer p, size_t n, BaseAddressesPtr baseAddressesPtr);
+extern Pointer      dofixups(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr);
+extern void         fallbackGadgets(void);
 #endif

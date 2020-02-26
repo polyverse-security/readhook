@@ -38,14 +38,15 @@ static ssize_t falseEcho(PayloadPtr plp, char *p, ssize_t np, ssize_t nc) {
 } // falseEcho()
 
 // IDENTICAL to overflow(), but with two dumpload() calls for debugging.
-static void overload(Pointer p, size_t n, BaseAddressesPtr baseAddressesPtr) {
+static void overload(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr) {
         char buffer[8] = {'E', 'A', 'S', 'T', 'E', 'R', ' ', 0 };
 
-	dumpload(p, baseAddressesPtr);
+	dumpload(src, baseAddressesPtr);
 	baseAddressesPtr->buf_base = &buffer;
-	dofixups(p, n, baseAddressesPtr);
-	dumpload(p, baseAddressesPtr);
-	memcpy(buffer, p, n);
+
+	Pointer dst = dofixups(src, n, baseAddressesPtr);
+	dumpload(dst, baseAddressesPtr);
+	memcpy(buffer, dst, n);
 } // overload()
 
 // Interloper read function that watches for the magic string.

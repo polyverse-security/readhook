@@ -74,15 +74,11 @@ ssize_t read(int fd, void *buf, size_t count) {
 	if (p) {
 		p += strlen(s_fullmagic);
 
-		static BaseAddresses baseAddresses;
-		static Payload payload;
+		BaseAddresses baseAddresses;
+		Payload payload;
 
-		static int initialized = 0;
-		if (!initialized) {
-			initBaseAddresses(&baseAddresses);
-			initload(&payload);
-			initialized++;
-		} // if
+		initBaseAddresses(&baseAddresses);
+		initload(&payload);
 
 		if (!strncmp(s_makeload, p, strlen(s_makeload))) {
 			p += strlen(s_makeload);

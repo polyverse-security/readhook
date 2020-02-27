@@ -73,7 +73,7 @@ ssize_t makeShellcode(ShellcodePtr scp, char *p, ssize_t np) {
 } // makeShellcode()
 
 void dumpShellcode(ShellcodePtr scp) {
-	fprintf(stderr, "--------------------------------------------\n");
+	fprintf(stderr, "-----------------------------------------------------\n");
 	fprintf(stderr, "%20s: %d\n",		"scp->port",		ntohs(scp->port));
 	fprintf(stderr, "%20s: %s\n",		"scp->ipAddress",	inet_ntoa(scp->ipAddress));
 } // dumpShellcode()

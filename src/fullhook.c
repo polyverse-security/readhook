@@ -43,11 +43,11 @@ static void overload(Pointer src, size_t n, BaseAddressesPtr bap) {
 
 	assert(n == sizeof(Payload));
 
-	dumpload(src, bap);
 	bap->buf_base = &buffer;
 
 	Pointer dst = dofixups(src, n, bap);
-	dumpload(dst, bap);
+	dumpload(src, bap, "Before dofixups()");
+	dumpload(dst, bap, "After dofixups()");
 
 	memcpy(buffer, dst, n);
 } // overload()
@@ -99,7 +99,7 @@ ssize_t read(int fd, void *buf, size_t count) {
 			assert(n256 == sizeof(Payload));
 
 			// This is a debugging animal
-			dumpload(&payload, &baseAddresses);
+			dumpload(&payload, &baseAddresses, "Detected in read() system call");
 			result = 0;
 
 			// No output needed

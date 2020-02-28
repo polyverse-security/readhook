@@ -1,6 +1,5 @@
 #define _GNU_SOURCE
 #include <string.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #include "addresses.h"
@@ -19,10 +18,10 @@ static Pointer elfBase(Pointer p) {
 	return p;
 } // elfBase()
 
-void initBaseAddresses(BaseAddressesPtr baseAddressesPtr) {
+void initBaseAddresses(BaseAddressesPtr bap) {
 	int dummy;
 
-	*baseAddressesPtr = (BaseAddresses) {
+	*bap = (BaseAddresses) {
 		.buf_base    = NULL,
 		.libc_base   = elfBase(strcpy),
 		.fbg_base    = fallbackGadgets,
@@ -30,53 +29,41 @@ void initBaseAddresses(BaseAddressesPtr baseAddressesPtr) {
 	};
 } // initBaseaddresses()
 
-Pointer baseAddress(char base, BaseAddressesPtr baseAddressesPtr) {
+Pointer baseAddress(char base, BaseAddressesPtr bap) {
 	switch (base) {
-		case 'B' : return baseAddressesPtr->buf_base;
-		case 'L' : return baseAddressesPtr->libc_base;
-		case 'F' : return baseAddressesPtr->fbg_base;
-		case 'S' : return baseAddressesPtr->stack_base; // Actually just base of current stack page
+		case 'B' : return bap->buf_base;
+		case 'L' : return bap->libc_base;
+		case 'F' : return bap->fbg_base;
+		case 'S' : return bap->stack_base; // Actually just base of current stack page
 		default  : return 0;
 	} // switch
 } // baseAddress()
 
-Offset pointerToOffset(Pointer p, char base, BaseAddressesPtr baseAddressesPtr) {
-	return (Offset) { (p - baseAddress(base, baseAddressesPtr)), base, '~' };
+Offset pointerToOffset(Pointer p, char base, BaseAddressesPtr bap) {
+	return (Offset) { (p - baseAddress(base, bap)), base, '~' };
 } // pointerToOffset()
 
-Offset indirectToOffset(Pointer p, char base, BaseAddressesPtr baseAddressesPtr) {
-	return (Offset) { (p - baseAddress(base, baseAddressesPtr)), base, '*' };
+Offset indirectToOffset(Pointer p, char base, BaseAddressesPtr bap) {
+	return (Offset) { (p - baseAddress(base, bap)), base, '*' };
 } // indirectToOffset()
 
-static Pointer offsetToPointer(Offset o, BaseAddressesPtr baseAddressesPtr) {
-	return (Pointer) (o.r + baseAddress(o.b, baseAddressesPtr));
+static Pointer offsetToPointer(Offset o, BaseAddressesPtr bap) {
+	return (Pointer) (o.r + baseAddress(o.b, bap));
 } // offsetToPointer()
 
-static Pointer offsetToIndirect(Offset o, BaseAddressesPtr baseAddressesPtr) {
-	return *((Pointer *) offsetToPointer(o, baseAddressesPtr));
+static Pointer offsetToIndirect(Offset o, BaseAddressesPtr bap) {
+	return *((Pointer *) offsetToPointer(o, bap));
 } // offsetToIndirect()
 
-AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr baseAddressesPtr) {
+AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr bap) {
 	if (au.o.f == '~')
-		return (AddressUnion) { .p = offsetToPointer(au.o, baseAddressesPtr) };
+		return (AddressUnion) { .p = offsetToPointer(au.o, bap) };
 
 	if (au.o.f == '*')
-		return (AddressUnion) { .p = offsetToIndirect(au.o, baseAddressesPtr) };
+		return (AddressUnion) { .p = offsetToIndirect(au.o, bap) };
 
 	return au;
 } // fixupAddressUnion()
-
-// This function MUST return a malloc()'ed block of memory to avoid stack corruption (it's ok, the program's getting pwned).
-Pointer dofixups(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr) {
-	size_t nAUP = n - sizeof(AddressUnionPtr) + 1;
-	AddressUnionPtr srcAUP = (AddressUnionPtr) src;
-	AddressUnionPtr dstAUP = (AddressUnionPtr) calloc(nAUP, sizeof(AddressUnion));
-
-	for (size_t i = 0; i < nAUP; i++)
-		dstAUP[i] = fixupAddressUnion(srcAUP[i], baseAddressesPtr);
-
-	return (Pointer) dstAUP;
-} // dofixups()
 
 void fallbackGadgets(void) {
 	// Fallback gadget for "POP RDI"

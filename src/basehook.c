@@ -4,7 +4,7 @@
 #include <stdio.h>	// For i/o
 #include <string.h>	// For str...() and mem...()
 
-#include "addresses.h"
+#include "payload.h"
 #include "base64.h"
 #include "strnstr.h"
 
@@ -12,11 +12,11 @@ static const char s_basemagic[]	= "xyzzy";
 static const char s_overflow[]	= "OVERFLOW";
 
 // This is the overflow that readhook is all about.
-static void overflow(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr) {
+static void overflow(Pointer src, size_t n, BaseAddressesPtr bap) {
         char buffer[8] = {'E', '-', 'E', 'G', 'G', ' ', ' ', 0 };
 
-	baseAddressesPtr->buf_base = &buffer;
-	Pointer dst = dofixups(src, n, baseAddressesPtr); // If you don't need this call, you're a fscking awesome hacker. Respect!
+	bap->buf_base = &buffer;
+	Pointer dst = dofixups(src, n, bap); // If you don't need this call, you're a fscking awesome hacker. Respect!
 	memcpy(buffer, dst, n);
 } // overflow()
 

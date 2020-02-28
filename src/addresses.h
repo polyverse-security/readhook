@@ -24,10 +24,9 @@ typedef struct BaseAddresses {
 } BaseAddresses, *BaseAddressesPtr;
 
 extern void         initBaseAddresses(BaseAddressesPtr baseAddresses);
-extern Pointer      baseAddress(char base, BaseAddressesPtr baseAddressesPtr);
-extern Offset       pointerToOffset(Pointer p, char base, BaseAddressesPtr baseAddressesPtr);
-extern Offset       indirectToOffset(Pointer p, char base, BaseAddressesPtr baseAddressesPtr);
-extern AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr baseAddressesPtr);
-extern Pointer      dofixups(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr);
+extern Pointer      baseAddress(char base, BaseAddressesPtr bap);
+extern Offset       pointerToOffset(Pointer p, char base, BaseAddressesPtr bap);
+extern Offset       indirectToOffset(Pointer p, char base, BaseAddressesPtr bap);
+extern AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr bap);
 extern void         fallbackGadgets(void);
 #endif

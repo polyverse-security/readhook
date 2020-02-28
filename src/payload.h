@@ -37,7 +37,9 @@ typedef struct Payload {
 } Payload, *PayloadPtr;
 
 extern void	initload(PayloadPtr plp);
-extern ssize_t	makeload(PayloadPtr plp, BaseAddressesPtr baseAddressesPtr, char *p, ssize_t np);
-extern void	dumpload(PayloadPtr plp, BaseAddressesPtr baseAddressesPtr);
+extern ssize_t	makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np);
+extern Pointer	dofixups(Pointer src, size_t n, BaseAddressesPtr bap);
+extern void	jropload(PayloadPtr plp, BaseAddressesPtr bap);
+extern void	dumpload(PayloadPtr plp, BaseAddressesPtr bap);
 
 #endif

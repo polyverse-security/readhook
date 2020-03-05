@@ -17,10 +17,10 @@ RUN	mkdir ./lib
 RUN	ar -cvq lib/utilhook.a obj/*.o
 
 RUN	mkdir ./dll
-RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie src/basehook.c -Wl,-z,relro,-z,now -shared -lc -ldl lib/utilhook.a -o dll/basehook.so
-RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie src/fullhook.c -Wl,-z,relro,-z,now -shared -lc -ldl lib/utilhook.a -o dll/fullhook.so
+RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie src/basehook.c src/fallback.c -Wl,-z,relro,-z,now,-soname,basehook.so -shared -lc -ldl lib/utilhook.a -o dll/basehook.so
+RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie src/fullhook.c -Wl,-z,relro,-z,now -shared -lc -ldl lib/utilhook.a dll/basehook.so -o dll/fullhook.so
 RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie src/noophook.c -Wl,-z,relro,-z,now -shared -lc -ldl lib/utilhook.a -o dll/noophook.so
 RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie src/nullhook.c -Wl,-z,relro,-z,now -shared -lc -ldl lib/utilhook.a -o dll/nullhook.so
 
 RUN	mkdir ./app
-RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie -DFULLHOOK_MAIN=1 src/fullhook.c lib/utilhook.a -Wl,-z,relro,-z,now -lc -ldl -o app/fullhook
+RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -Fpie -pie -DFULLHOOK_MAIN=1 src/fullhook.c lib/utilhook.a dll/basehook.so -Wl,-z,relro,-z,now -lc -ldl -o app/fullhook

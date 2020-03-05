@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "addresses.h"
+#include "fallback.h"
 
 static Pointer pageBase(Pointer p) {
 	return (Pointer) (((unsigned long) p) & (-1 ^ getpagesize() - 1));
@@ -64,21 +65,3 @@ AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr bap) {
 
 	return au;
 } // fixupAddressUnion()
-
-void fallbackGadgets(void) {
-	// Fallback gadget for "POP RDI"
-	asm volatile ("pop %rdi");
-	asm volatile ("ret");
-
-	// Fallback gadget for "POP RSI"
-	asm volatile ("pop %rsi");
-	asm volatile ("ret");
-
-	// Fallback gadget for "POP RDX"
-	asm volatile ("pop %rdx");
-	asm volatile ("ret");
-
-	// NOP gadget for creating a dependency
-	asm volatile ("nop");
-	asm volatile ("ret");
-} // fallbackGadgets()

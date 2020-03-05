@@ -28,5 +28,4 @@ extern Pointer      baseAddress(char base, BaseAddressesPtr bap);
 extern Offset       pointerToOffset(Pointer p, char base, BaseAddressesPtr bap);
 extern Offset       indirectToOffset(Pointer p, char base, BaseAddressesPtr bap);
 extern AddressUnion fixupAddressUnion(AddressUnion au, BaseAddressesPtr bap);
-extern void         fallbackGadgets(void);
 #endif

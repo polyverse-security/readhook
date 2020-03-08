@@ -8,6 +8,7 @@ COPY	src src
 RUN	mkdir ./obj
 RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -c -o obj/addresses.o src/addresses.c
 RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -c -o obj/base64.o src/base64.c
+RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -c -o obj/memory.o src/memory.c
 RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -c -o obj/payload.o src/payload.c
 RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -c -o obj/shellcode.o src/shellcode.c
 RUN	gcc -std=gnu99 -fstack-protector-all -fPIC -c -o obj/strlcpy.o src/strlcpy.c

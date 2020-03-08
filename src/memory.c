@@ -22,7 +22,7 @@ static void *searchRegion(FILE* pMemFile, void *start, void *end, char *name)
 		return NULL;
 
 	// In fact, don't consider anything above 0x7FFFFFFFFFFF because that's always kernel memory (True?)
-	if (start > 0x800000000000 || end > 0x800000000000)
+	if (start > (void *) 0x800000000000 || end > (void *) 0x800000000000)
 		return NULL;
 
 	fprintf(stdout, "Search region: (%016lx-%016lx) - %s\n", start, end, name);

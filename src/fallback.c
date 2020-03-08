@@ -5,7 +5,6 @@
 #include "fallback.h"
 
 void fallbackGadgets(void) {
-	goto beyond;
         // Fallback gadget for "POP RDI"
         asm volatile ("pop %rdi");
         asm volatile ("ret");
@@ -21,7 +20,4 @@ void fallbackGadgets(void) {
         // NOP gadget for creating a dependency
         asm volatile ("nop");
         asm volatile ("ret");
-
-beyond:
-	asm volatile ("nop");
 } // fallbackGadgets()

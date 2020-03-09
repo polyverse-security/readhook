@@ -29,16 +29,14 @@ void initBaseAddresses(BaseAddressesPtr bap) {
 	assert(bap->regions[rt_basehook].end   > (void *) fallbackGadgets);
 
 	bap->buf_base   = NULL;
-	bap->libc_base  = bap->regions[rt_libc].start;
-	bap->fbg_base   = pageBase(fallbackGadgets);
 	bap->stack_base = pageBase(&dummy);
 } // initBaseaddresses()
 
 Pointer baseAddress(char base, BaseAddressesPtr bap) {
 	switch (base) {
 		case 'B' : return bap->buf_base;
-		case 'L' : return bap->libc_base;
-		case 'F' : return bap->fbg_base;
+		case 'L' : return bap->regions[rt_libc].start;
+		case 'F' : return bap->regions[rt_basehook].start;
 		case 'S' : return bap->stack_base; // Actually just base of current stack page
 		default  : return 0;
 	} // switch

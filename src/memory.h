@@ -16,6 +16,7 @@ typedef Region Regions[rt_max];
 
 extern void initRegions(Regions regions);
 extern void printRegions(Regions regions);
+extern void *searchRegion(RegionPtr regionPtr, char *searchString);
 extern void searchMemory(void);
 
 // "", "<ALL>", "fullhook", "libc-2.17.so", "basehook.so", "[vdso]", "[vsyscall]"

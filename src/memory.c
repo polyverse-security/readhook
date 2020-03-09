@@ -6,6 +6,7 @@
 #include <unistd.h> // for getpagesize()
 
 #include "memory.h"
+#include "strnstr.h"
 
 // Example line from /proc/self/maps
 // 7fb804c13000-7fb804dcd000 r-xp 00000000 08:01 2888226                    /usr/lib64/libc-2.28.so
@@ -72,7 +73,14 @@ void printRegions(Regions regions) {
 		fprintf(stdout, "(%016lx-%016lx) - %s\n", (long unsigned int) regions[tag].start, (long unsigned int) regions[tag].end, regions[tag].name);
 }
 
-static void *searchRegion(void *start, void *end, char *name)
+void *searchRegion(RegionPtr regionPtr, char *searchString)
+{
+	fprintf(stdout, "searchRegion: (%016lx-%016lx) - %s\n", (long unsigned int) regionPtr->start, (long unsigned int) regionPtr->end, regionPtr->name);
+
+        return strnstr(regionPtr->start, searchString, regionPtr->end - regionPtr->start);
+} // searchRegion()
+
+static void *searchMemory0(void *start, void *end, char *name)
 {
 	// Don't check the special area at the top of memory called vsyscall, because it's mapped special (True?)
 	if (strcmp(name, "[vsyscall]") == 0)
@@ -82,7 +90,7 @@ static void *searchRegion(void *start, void *end, char *name)
 	if (start > (void *) 0x800000000000 || end > (void *) 0x800000000000)
 		return NULL;
 
-	fprintf(stdout, "Search region: (%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
+	fprintf(stdout, "searchMemory0: (%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
 
 	FILE* pMemFile = fopen("/proc/self/mem", "r");
 	int pageSize = getpagesize();
@@ -98,7 +106,7 @@ static void *searchRegion(void *start, void *end, char *name)
 	fclose(pMemFile);
 
 	return NULL;
-} // searchRegion()
+} // searchMemory0()
 
 void searchMemory(void) {
 	FILE* pMapsFile = fopen("/proc/self/maps", "r");
@@ -113,9 +121,9 @@ void searchMemory(void) {
 		sscanf(line, "%016lx-%016lx %c%*c%c%*c %*8c %*5c %*7c %s\n", (long unsigned int *) &start, (long unsigned int *) &end, &perm_r, &perm_x, name);
 		fprintf(stdout, "(%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
 		if (perm_r == 'r' && perm_x == 'x') {
-			searchRegion(start, end, name);
+			searchMemory0(start, end, name);
 		} //if
 	} // while
 
 	fclose(pMapsFile);
-}
+} // searchMemory()

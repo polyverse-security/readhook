@@ -21,8 +21,6 @@ typedef union AddressUnion {
 typedef struct BaseAddresses {
 	Regions regions;
 	Pointer buf_base;
-	Pointer libc_base;
-	Pointer fbg_base;
 	Pointer stack_base;
 } BaseAddresses, *BaseAddressesPtr;
 

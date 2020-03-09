@@ -4,6 +4,7 @@
 
 #include "addresses.h"
 #include "fallback.h"
+#include "memory.h"
 
 static Pointer pageBase(Pointer p) {
 	return (Pointer) (((unsigned long) p) & (-1 ^ getpagesize() - 1));
@@ -20,7 +21,11 @@ static Pointer elfBase(Pointer p) {
 } // elfBase()
 
 void initBaseAddresses(BaseAddressesPtr bap) {
+	Regions regions;
 	int dummy;
+	
+	initRegions(regions);
+	printRegions(regions);
 
 	*bap = (BaseAddresses) {
 		.buf_base    = NULL,

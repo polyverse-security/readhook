@@ -14,6 +14,12 @@
 // typedef enum RegionTag {rt_none = 0, rt_all, rt_self, rt_libc, rt_basehook, rt_vdso, rt_vsyscall, rt_max } RegionTag;
 
 static void initRegion(RegionPtr regionPtr, RegionTag tag, void *start, void *end, char *name) {
+	// Special case for annotated binary where we produce a scratch area to move code within
+	if (strcmp(regionPtr->name, name) == 0) {
+		fprintf(stderr, "Ignoring second executable section called: %s\n", name);
+		return;
+	} // if
+
 	// Sanity check that the world is not flat
 	assert(regionPtr->tag == tag);
 	assert(regionPtr->start == NULL);
@@ -45,7 +51,7 @@ void initRegions(Regions regions) {
 
 		sscanf(line, "%016lx-%016lx %c%*c%c%*c %*8c %*5c %*7c %s\n", (long unsigned int *) &start, (long unsigned int *) &end, &perm_r, &perm_x, name);
 		if (perm_r == 'r' && perm_x == 'x') {
-			fprintf(stdout, "scanRegions: (%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
+			fprintf(stderr, "scanRegions: (%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
 
 			if (regions[rt_self].start == NULL)
 				initRegion(regions + rt_self, rt_self, start, end, name);
@@ -68,19 +74,19 @@ void initRegions(Regions regions) {
 } // initRegions()
 
 void printRegions(Regions regions) {
-	fprintf(stdout, "printRegions:\n");
+	fprintf(stderr, "printRegions:\n");
 	for (RegionTag tag = rt_none; tag < rt_max; tag++)
-		fprintf(stdout, "(%016lx-%016lx) - %s\n", (long unsigned int) regions[tag].start, (long unsigned int) regions[tag].end, regions[tag].name);
+		fprintf(stderr, "(%016lx-%016lx) - %s\n", (long unsigned int) regions[tag].start, (long unsigned int) regions[tag].end, regions[tag].name);
 }
 
 void *searchRegion(RegionPtr regionPtr, char *searchString)
 {
-	fprintf(stdout, "searchRegion: (%016lx-%016lx) - %s\n", (long unsigned int) regionPtr->start, (long unsigned int) regionPtr->end, regionPtr->name);
+	fprintf(stderr, "searchRegion: (%016lx-%016lx) - %s\n", (long unsigned int) regionPtr->start, (long unsigned int) regionPtr->end, regionPtr->name);
 
         return strnstr(regionPtr->start, searchString, regionPtr->end - regionPtr->start);
 } // searchRegion()
 
-static void *searchMemory0(void *start, void *end, char *name)
+static void *searchMemory0(void *start, void *end, char *name, char *searchString)
 {
 	// Don't check the special area at the top of memory called vsyscall, because it's mapped special (True?)
 	if (strcmp(name, "[vsyscall]") == 0)
@@ -90,40 +96,31 @@ static void *searchMemory0(void *start, void *end, char *name)
 	if (start > (void *) 0x800000000000 || end > (void *) 0x800000000000)
 		return NULL;
 
-	fprintf(stdout, "searchMemory0: (%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
+	fprintf(stderr, "searchMemory0: (%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
 
-	FILE* pMemFile = fopen("/proc/self/mem", "r");
-	int pageSize = getpagesize();
-
-	for (void *address=start; address < end; address += pageSize)
-	{
-		unsigned char pages[pageSize * 2];
-
-		fseeko(pMemFile, (off_t) address, SEEK_SET);
-		size_t nBytes = fread(pages, 1, pageSize * 2, pMemFile);
-	} // for
-
-	fclose(pMemFile);
-
-	return NULL;
+        return strnstr(start, searchString, end - start);
 } // searchMemory0()
 
-void searchMemory(void) {
+void *searchMemory(char *searchString) {
 	FILE* pMapsFile = fopen("/proc/self/maps", "r");
+	void *result = NULL;
 
 	char line[1024];
-	while (fgets(line, sizeof(line), pMapsFile) != NULL)
+	while (result == NULL && fgets(line, sizeof(line), pMapsFile) != NULL)
 	{
 		void *start, *end;
 		char perm_r, perm_x;
 		char name[256];
 
 		sscanf(line, "%016lx-%016lx %c%*c%c%*c %*8c %*5c %*7c %s\n", (long unsigned int *) &start, (long unsigned int *) &end, &perm_r, &perm_x, name);
-		fprintf(stdout, "(%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
-		if (perm_r == 'r' && perm_x == 'x') {
-			searchMemory0(start, end, name);
-		} //if
+		if (perm_r == 'r' && perm_x == 'x')
+			result = searchMemory0(start, end, name, searchString);
 	} // while
 
 	fclose(pMapsFile);
+
+	if (result != NULL)
+		fprintf(stderr, "Found at: %p\n", result);
+
+	return result;
 } // searchMemory()

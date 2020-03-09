@@ -34,6 +34,7 @@ void initBaseAddresses(BaseAddressesPtr bap) {
 
 Pointer baseAddress(char base, BaseAddressesPtr bap) {
 	switch (base) {
+		case 'A' : return 0;
 		case 'B' : return bap->buf_base;
 		case 'L' : return bap->regions[rt_libc].start;
 		case 'F' : return bap->regions[rt_basehook].start;

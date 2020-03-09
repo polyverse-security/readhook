@@ -64,10 +64,6 @@ void initRegions(Regions regions) {
 	} // while
 
 	fclose(pMapsFile);
-
-	// Make sure that we found them all
-	for (RegionTag tag = rt_none + 1; tag < rt_max; tag++)
-		assert(regions[tag].start != NULL && regions[tag].end != NULL);
 } // initRegions()
 
 void printRegions(Regions regions) {

@@ -1,38 +1,37 @@
 #define _GNU_SOURCE
+#include <assert.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "addresses.h"
 #include "fallback.h"
-#include "memory.h"
 
 static Pointer pageBase(Pointer p) {
 	return (Pointer) (((unsigned long) p) & (-1 ^ getpagesize() - 1));
 } // pageBase()
 
-static Pointer elfBase(Pointer p) {
-	const char s_elf_signature[] = {0x7F, 'E', 'L', 'F', 0};
-
-	p = pageBase(p);
-	while (strncmp(p, s_elf_signature, strlen(s_elf_signature)))
-		p -= getpagesize();
-
-	return p;
-} // elfBase()
-
 void initBaseAddresses(BaseAddressesPtr bap) {
-	Regions regions;
 	int dummy;
 	
-	initRegions(regions);
-	printRegions(regions);
+	initRegions(bap->regions);
+	printRegions(bap->regions);
 
-	*bap = (BaseAddresses) {
-		.buf_base    = NULL,
-		.libc_base   = elfBase(strcpy),
-		.fbg_base    = fallbackGadgets,
-		.stack_base  = pageBase(&dummy)
-	};
+        // Make sure that we found what we expect
+        for (RegionTag tag = rt_none + 1; tag < rt_max; tag++)
+                assert(bap->regions[tag].start != NULL && bap->regions[tag].end != NULL);
+
+	// Make sure, that strcpy() is in the libc region
+	assert(bap->regions[rt_libc].start < (void *) strcpy);
+	assert(bap->regions[rt_libc].end   > (void *) strcpy);
+
+	// Make sure that fallbackGadgets() is in the basehook region
+	assert(bap->regions[rt_basehook].start < (void *) fallbackGadgets);
+	assert(bap->regions[rt_basehook].end   > (void *) fallbackGadgets);
+
+	bap->buf_base   = NULL;
+	bap->libc_base  = bap->regions[rt_libc].start;
+	bap->fbg_base   = pageBase(fallbackGadgets);
+	bap->stack_base = pageBase(&dummy);
 } // initBaseaddresses()
 
 Pointer baseAddress(char base, BaseAddressesPtr bap) {

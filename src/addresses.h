@@ -2,6 +2,8 @@
 #define _ADDRESSES_H_
 #include <stddef.h>
 
+#include "memory.h"
+
 typedef void *Pointer;
 
 typedef struct Offset {
@@ -17,6 +19,7 @@ typedef union AddressUnion {
 } AddressUnion, *AddressUnionPtr;
 
 typedef struct BaseAddresses {
+	Regions regions;
 	Pointer buf_base;
 	Pointer libc_base;
 	Pointer fbg_base;

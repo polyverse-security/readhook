@@ -50,7 +50,7 @@ void initRegions(Regions regions) {
 			if (regions[rt_self].start == NULL)
 				initRegion(regions + rt_self, rt_self, start, end, name);
 				
-        		if (strstr(name, "libc") != NULL || strstr(name, "musl") != NULL)
+        		if (strstr(name, "libc-") != NULL || strstr(name, "musl-") != NULL)
 				initRegion(regions + rt_libc, rt_libc, start, end, name);
 
         		if (strstr(name, "basehook.so") != NULL)

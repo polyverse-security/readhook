@@ -19,5 +19,6 @@ void fallbackGadgets(void) {
 
         // NOP gadget for creating a dependency
         asm volatile ("nop");
+        asm volatile ("nop");
         asm volatile ("ret");
 } // fallbackGadgets()

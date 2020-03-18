@@ -19,7 +19,6 @@ typedef struct ROPChain {
 	ptrdiff_t	rc_stackSize;
 	AddressUnion	rc_popRDX;
 	long		rc_permission;
-	AddressUnion	rc_nop;
 	AddressUnion	rc_mprotect;
 	AddressUnion	rc_pivot;
 } ROPChain, *ROPChainPtr;

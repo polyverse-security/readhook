@@ -12,17 +12,18 @@
 static const char s_basemagic[]	= "xyzzy";
 static const char s_overflow[]	= "OVERFLOW";
 
-static void *libc_handle = NULL;
+typedef
+ssize_t Read(int fd, void *buf, size_t count);
+static Read *libc_read = NULL; 
 
 static void init() __attribute__((constructor));
 void init() {
-	libc_handle = dlopen("libc.so.6",RTLD_LAZY);
-	// NOTE: libc.so.6 may *not* exist on Alpha and IA-64 architectures.
-	if(!libc_handle) {
-		fprintf(stderr,"basehook.so init(): libc.so.6 dlopen() failed");
+	libc_read = (Read *) dlsym(RTLD_NEXT, "read"); 
+	if(!libc_read) {
+		fprintf(stderr,"basehook.so init(): dlsym(RTLD_NEXT, \"read\") failed");
 		errno = ENOENT;
 	} else {
-		fprintf(stderr,"basehook.so init(): libc.so.6 opened");
+		fprintf(stderr,"basehook.so init(): dlsym(RTLD_NEXT, \"read\") succeeded");
 	}
 }
 
@@ -36,17 +37,7 @@ static void overflow(Pointer src, size_t n, BaseAddressesPtr bap) {
 } // overflow()
 
 // Interloper read function that watches for the magic string.
-typedef
-ssize_t Read(int fd, void *buf, size_t count);
 ssize_t read(int fd, void *buf, size_t count) {
-	// Read *libc_read = (Read *) dlsym(RTLD_NEXT, "read"); 
-	// fprintf(stderr,"basehook.so read(%d)", fd);
-	Read *libc_read = (Read *) dlsym(libc_handle,"read");
-	if(!libc_read) {
-	// Bad! 'read' was not found inside libc.
-		return -1;
-		errno = EINVAL;
-	}	
 	ssize_t result = libc_read(fd, buf, count);
 
 	char *p = (result < (ssize_t) strlen(s_basemagic)) ? NULL : strnstr(buf, s_basemagic, result);

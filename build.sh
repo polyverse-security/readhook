@@ -26,7 +26,7 @@ docker rm -f readhook
 
 # Here and below added for jitrop branch
 declare -r PV_DOCKER_REGISTRY="507760724064.dkr.ecr.us-west-2.amazonaws.com"
-declare -r PV_ANNOTATOR=${PV_DOCKER_REGISTRY}/pe-binary-scrambler:17f8e7-8f6ad7
+declare -r PV_ANNOTATOR=${PV_DOCKER_REGISTRY}/pe-binary-scrambler:e63efc-9d0445
 
 # Use the container itself to clean up /tmp (Because I don't have privilege to do it!)
 docker run -v /tmp/output:/output --entrypoint /bin/bash ${PV_ANNOTATOR} -c 'rm -rf /output/*'

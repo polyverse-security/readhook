@@ -65,8 +65,6 @@ void initRegions(Regions regions) {
         		if (strcmp(name, "[vdso]") == 0)
 				initRegion(regions + rt_vdso, rt_vdso, start, end, name);
 
-        		if (strcmp(name, "[vsyscall]") == 0)
-				initRegion(regions + rt_vsyscall, rt_vsyscall, start, end, name);
 		} // if
 	} // while
 

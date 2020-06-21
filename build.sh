@@ -4,7 +4,7 @@
 rm -r app dll lib obj
 
 # Make the output directories
-mkdir -p app dll lib obj
+mkdir -p app dll lib obj scr
 
 # Remove the build container (if it was left around)
 docker rm -f readhook
@@ -26,7 +26,7 @@ docker rm -f readhook
 
 # Here and below added for jitrop branch
 declare -r PV_DOCKER_REGISTRY="507760724064.dkr.ecr.us-west-2.amazonaws.com"
-declare -r PV_ANNOTATOR=${PV_DOCKER_REGISTRY}/pe-binary-scrambler:814428-6099f1
+declare -r PV_ANNOTATOR=${PV_DOCKER_REGISTRY}/pe-binary-scrambler:898436-d6fbdc
 
 # Use the container itself to clean up /tmp (Because I don't have privilege to do it!)
 docker run -v /tmp/output:/output --entrypoint /bin/bash ${PV_ANNOTATOR} -c 'rm -rf /output/*'
@@ -36,3 +36,4 @@ docker run -v $PWD/dll:/input -v /tmp/output:/output -e FILE_TO_SCRAMBLE=basehoo
 
 # Combine the annotation artifacts with the original artifacts (overwriting librandomizer.so)
 cp -f /tmp/output/scrambled/* $PWD/dll
+# cp -f /tmp/output/scrambled/* $PWD/scr

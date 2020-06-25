@@ -49,6 +49,7 @@ void initRegions(Regions regions) {
 		char perm_r, perm_x;
 		char name[256];
 
+		fprintf(stderr, "scanRegions raw /proc/self/maps line: %s\n", line);
 		sscanf(line, "%016lx-%016lx %c%*c%c%*c %*8c %*5c %*7c %s\n", (long unsigned int *) &start, (long unsigned int *) &end, &perm_r, &perm_x, name);
 		if (perm_r == 'r' && perm_x == 'x') {
 			fprintf(stderr, "scanRegions: (%016lx-%016lx) - %s\n", (long unsigned int) start, (long unsigned int) end, name);
